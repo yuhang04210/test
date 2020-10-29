@@ -9,15 +9,18 @@ const koaBody = require('koa-body');
 
 const { mkdirsSync } = require('./utils/dir');
 const uploadPath = path.join(__dirname, 'uploads');
-const uploadTempPath = path.join(uploadPath, 'temp');
-const upload = multer({ dest: uploadTempPath });
+const uploadTempPath = path.join(uploadPath, '/');
+// const uploadTempPath = path.join(uploadPath, 'temp');
+// const upload = multer({ dest: uploadTempPath });
 const router = new Router();
-app.use(koaBody());
+// app.use(koaBody());
+app.use(koaBody({multipart:true,patchNode: true,uploadDir:uploadTempPath }));
 /**
  * single(fieldname)
  * Accept a single file with the name fieldname. The single file will be stored in req.file.
  */
-router.post('/file/upload', upload.single('file'), async (ctx, next) => {
+// router.post('/file/upload', upload.single('file'), async (ctx, next) => {
+router.post('/file/upload',  async (ctx, next) => {
   console.log('file upload...')
   // 根据文件hash创建文件夹，把默认上传的文件移动当前hash文件夹下。方便后续文件合并。
   const {
@@ -29,12 +32,14 @@ router.post('/file/upload', upload.single('file'), async (ctx, next) => {
   } = ctx.req.body;
 
   const chunksPath = path.join(uploadPath, hash, '/');
-  if(!fs.existsSync(chunksPath)) mkdirsSync(chunksPath);
-  fs.renameSync(ctx.req.file.path, chunksPath + hash + '-' + index);
+  if (!fs.existsSync(chunksPath)) mkdirsSync(chunksPath);
+  // 将上传到内存的分片文件移动到由hash创建的文件夹，并且拼接下标
+  fs.renameSync(ctx.req.files.file.path, chunksPath + hash + '-' + index);
   ctx.status = 200;
   ctx.res.end('Success');
 })
 
+// 通过读取由hash创建的文件夹中的所有的chunk,进行拼接合并到一起
 router.post('/file/merge_chunks', async (ctx, next) => {
   const {    
     size, 
@@ -50,7 +55,7 @@ router.post('/file/merge_chunks', async (ctx, next) => {
   // 读取所有的chunks 文件名存放在数组中
   const chunks = fs.readdirSync(chunksPath);
   // 创建存储文件
-  fs.writeFileSync(filePath, ''); 
+  // fs.writeFileSync(filePath, ''); 
   if(chunks.length !== total || chunks.length === 0) {
     ctx.status = 200;
     ctx.res.end('切片文件数量不符合');
@@ -65,6 +70,10 @@ router.post('/file/merge_chunks', async (ctx, next) => {
   fs.rmdirSync(chunksPath);
   // 文件合并成功，可以把文件信息进行入库。
   ctx.status = 200;
+  // 解决响应中文乱码问题
+  ctx.res.writeHead(200, {
+    'content-type': 'text/plain;charset=utf8'
+  });
   ctx.res.end('合并成功');
 })
 app.use(router.routes());

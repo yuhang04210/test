@@ -1,9 +1,10 @@
 $(document).ready(() => {
-  const chunkSize = 2 * 1024 * 1024; // 每个chunk的大小，设置为2兆
+  const chunkSize = 0.2 * 1024 * 1024; // 每个chunk的大小，设置为2兆
   // 使用Blob.slice方法来对文件进行分割。
   // 同时该方法在不同的浏览器使用方式不同。
   const blobSlice = File.prototype.slice || File.prototype.mozSlice || File.prototype.webkitSlice;
   const hashFile = (file) => {
+    debugger
     return new Promise((resolve, reject) => { 
       const chunks = Math.ceil(file.size / chunkSize);
       let currentChunk = 0;
@@ -41,6 +42,7 @@ $(document).ready(() => {
   }
   const submitBtn = $('#submitBtn');
   submitBtn.on('click', async () => {
+    debugger
     const fileDom = $('#file')[0];
     // 获取到的files为一个File对象数组，如果允许多选的时候，文件为多个
     const files = fileDom.files;
