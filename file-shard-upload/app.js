@@ -14,6 +14,7 @@ const uploadTempPath = path.join(uploadPath, '/');
 // const upload = multer({ dest: uploadTempPath });
 const router = new Router();
 // app.use(koaBody());
+
 app.use(koaBody({multipart:true,patchNode: true,uploadDir:uploadTempPath }));
 /**
  * single(fieldname)
